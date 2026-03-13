@@ -24,7 +24,8 @@ bctx.imageSmoothingEnabled = false;
 // ============ SOUND EFFECTS (Web Audio API) ============
 let audioCtx;
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === "suspended") audioCtx.resume();
   return audioCtx;
 }
 
