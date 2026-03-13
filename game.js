@@ -1,18 +1,24 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// Buffer scaled to fill viewport
+// Buffer scaled to fill viewport (works on mobile + desktop)
 const BW = 288;
 const BH = 512;
-const SCALE = Math.max(1, Math.min(
-  Math.floor(window.innerWidth / BW),
-  Math.floor(window.innerHeight / BH)
-));
-canvas.width = BW * SCALE;
-canvas.height = BH * SCALE;
-canvas.style.width = BW * SCALE + "px";
-canvas.style.height = BH * SCALE + "px";
-ctx.imageSmoothingEnabled = false;
+
+function resizeCanvas() {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const scale = Math.min(vw / BW, vh / BH);
+  const w = Math.floor(BW * scale);
+  const h = Math.floor(BH * scale);
+  canvas.width = w;
+  canvas.height = h;
+  canvas.style.width = w + "px";
+  canvas.style.height = h + "px";
+  ctx.imageSmoothingEnabled = false;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 // Offscreen buffer
 const buf = document.createElement("canvas");
@@ -170,7 +176,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 canvas.addEventListener("click", flap);
-canvas.addEventListener("touchstart", (e) => { e.preventDefault(); flap(); });
+canvas.addEventListener("touchstart", (e) => { e.preventDefault(); flap(); }, { passive: false });
+document.addEventListener("touchmove", (e) => { e.preventDefault(); }, { passive: false });
 
 // Pipe management
 function spawnPipe() {
