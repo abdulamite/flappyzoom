@@ -21,6 +21,78 @@ buf.height = BH;
 const bctx = buf.getContext("2d");
 bctx.imageSmoothingEnabled = false;
 
+// ============ SOUND EFFECTS (Web Audio API) ============
+let audioCtx;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playFlap() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(400, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.12);
+}
+
+function playScore() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "square";
+  osc.frequency.setValueAtTime(520, ctx.currentTime);
+  osc.frequency.setValueAtTime(680, ctx.currentTime + 0.07);
+  gain.gain.setValueAtTime(0.1, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.18);
+}
+
+function playDeath() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = "sawtooth";
+  osc.frequency.setValueAtTime(300, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.4);
+  gain.gain.setValueAtTime(0.15, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.5);
+}
+
+function playSwoosh() {
+  const ctx = getAudioCtx();
+  const bufferSize = ctx.sampleRate * 0.15;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const gain = ctx.createGain();
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 1200;
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+  src.start(ctx.currentTime);
+}
+
 // LegalZoom brand colors
 const LZ_ORANGE = "#E8531E";
 const LZ_DARK = "#C7421A";
@@ -80,9 +152,12 @@ function flap() {
   if (gameState === "ready") {
     gameState = "playing";
     bird.vy = FLAP_POWER;
+    playFlap();
   } else if (gameState === "playing") {
     bird.vy = FLAP_POWER;
+    playFlap();
   } else if (gameState === "dead") {
+    playSwoosh();
     resetGame();
   }
 }
@@ -528,12 +603,14 @@ function update() {
     if (!pipe.scored && pipe.x + PIPE_WIDTH < bird.x) {
       pipe.scored = true;
       score++;
+      playScore();
     }
   }
   pipes = pipes.filter((p) => p.x + PIPE_WIDTH > -10);
 
   if (checkCollision()) {
     gameState = "dead";
+    playDeath();
     if (score > bestScore) bestScore = score;
   }
 }
